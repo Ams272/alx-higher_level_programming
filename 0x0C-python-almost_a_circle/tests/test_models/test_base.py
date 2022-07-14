@@ -1,140 +1,139 @@
 #!/usr/bin/python3
-"""Provides unittest for the 'Base' class provided by the 'models' module
-"""
-
 import unittest
-import json
-from os import chdir, getcwd, remove
-from shutil import rmtree
-from tempfile import mkdtemp
-
+from models.square import Square
+import sys
+from io import StringIO
+import pep8
 from models.base import Base
+import json
+from models.rectangle import Rectangle
+import os
+"""
+This module contains all unittest for Base class
+"""
 
 
 class TestBase(unittest.TestCase):
-    """Test base model methods
+    """
+    Class of functions to run tests
     """
     def setUp(self):
-        """Create a temporary directory and Base instance
         """
-        self.base = Base()
-        chdir(mkdtemp())
+        function to redirect stdout
+        """
+        sys.stdout = StringIO()
 
     def tearDown(self):
-        """Remove temporary files and directories
         """
-        rmtree(getcwd(), ignore_errors=True)
+        cleans everything
+        """
+        sys.stdout = sys.__stdout__
 
-    def test_base(self):
-        """Test the __init__ method
+    def test_pep8_model(self):
         """
-        self.assertIsInstance(self.base, Base)
+        Tests for pep8 model
+        """
+        p8 = pep8.StyleGuide(quiet=True)
+        p = p8.check_files(['models/base.py'])
+        self.assertEqual(p.total_errors, 0, "fix pep8")
 
-    def test_base_id(self):
-        """Test the __init__ method
+    def test_pep8_test(self):
         """
-        self.assertIsInstance(self.base.id, int)
-        self.assertGreater(self.base.id, 0)
+        Tests for pep8 test
+        """
+        p8 = pep8.StyleGuide(quiet=True)
+        p = p8.check_files(['tests/test_models/test_base.py'])
+        self.assertEqual(p.total_errors, 0, "fix pep8")
 
-    def test_init_type(self):
-        """Test the __init__ method
-        """
-        types = (int, float, str, tuple, list, dict, set, bool)
-        self.assertIsInstance(Base(), Base)
-        self.assertIsInstance(Base(0), Base)
-        for value in [t() for t in types] + [None, type]:
-            self.assertIsInstance(Base(id=value), Base)
+    def test_docstrings(self):
+        self.assertIsNotNone(module_doc)
+        self.assertIsNotNone(Base.__doc__)
+        self.assertIs(hasattr(Base, "__init__"), True)
+        self.assertIsNotNone(Base.__init__.__doc__)
+        self.assertIs(hasattr(Base, "create"), True)
+        self.assertIsNotNone(Base.create.__doc__)
+        self.assertIs(hasattr(Base, "to_json_string"), True)
+        self.assertIsNotNone(Base.to_json_string.__doc__)
+        self.assertIs(hasattr(Base, "from_json_string"), True)
+        self.assertIsNotNone(Base.from_json_string.__doc__)
+        self.assertIs(hasattr(Base, "save_to_file"), True)
+        self.assertIsNotNone(Base.save_to_file.__doc__)
+        self.assertIs(hasattr(Base, "load_from_file"), True)
+        self.assertIsNotNone(Base.load_from_file.__doc__)
 
-    def test_init_id_equality(self):
-        """Test the __init__ method
+    def test_id(self):
         """
-        types = (int, float, str, tuple, list, dict, set, bool)
-        self.assertNotEqual(self.base.id, Base().id)
-        self.assertNotEqual(self.base.id, Base(id=None).id)
-        self.assertEqual(Base(0).id, 0)
-        for value in (t() for t in types):
-            self.assertEqual(Base(id=value).id, value)
+        Test check for id 
+        """
+        Base._Base__nb_objects = 0
+        b1 = Base()
+        b2 = Base()
+        b3 = Base()
+        b4 = Base(12)
+        b5 = Base()
+        self.assertEqual(b1.id, 1)
+        self.assertEqual(b2.id, 2)
+        self.assertEqual(b3.id, 3)
+        self.assertEqual(b4.id, 12)
+        self.assertEqual(b5.id, 4)
 
-    def test_init_id_identity(self):
-        """Test the __init__ method
+    def test_from_json_string(self):
         """
-        self.assertIs(Base(id=type).id, type)
+        Test check from json string
+        """
+        self.assertEqual(Base.to_json_string(None), "[]")
+        self.assertEqual(Base.to_json_string([]), "[]")
+        with self.subTest():
+            r1 = Rectangle(10, 7, 2, 8, 1)
+            r1_dict = r1.to_dictionary()
+            json_dict = Base.to_json_string([r1_dict])
+            self.assertEqual(r1_dict, {'x': 2, 'width': 10,
+                                       'id': 1, 'height': 7,
+                                       'y': 8})
+            self.assertIs(type(r1_dict), dict)
+            self.assertIs(type(json_dict), str)
+            self.assertEqual(json.loads(json_dict), json.loads('[{"x": 2, '
+                                                               '"width": 10, '
+                                                               '"id": 1, '
+                                                               '"height": 7, '
+                                                               '"y": 8}]'))
 
-    def test_init_id_type(self):
-        """Test the __init__ method
+    def test_rectangle(self):
         """
-        self.assertIsInstance(Base().id, int)
-        self.assertIsInstance(Base(id=None).id, int)
+        Test check for rectangle
+        """
+        R1 = Rectangle(4, 5, 6)
+        R1_dict = R1.to_dictionary()
+        R2 = Rectangle.create(**R1_dict)
+        self.assertNotEqual(R1, R2)
 
-    def test_init_raises(self):
-        """Test the __init__ method
+    def test_square(self):
         """
-        self.assertRaisesRegex(
-            TypeError,
-            ".*\\b__init__\\(\\) takes from 1 to 2 positional arguments\\b.*",
-            Base, 0, 0
-        )
+        Test check for square creation
+        """
+        S1 = Square(44, 55, 66, 77)
+        S1_dict = S1.to_dictionary()
+        S2 = Rectangle.create(**S1_dict)
+        self.assertNotEqual(S1, S2)
 
-    def test_create_type(self):
-        """Test the create method
+    def test_file_rectangle(self):
         """
-        types = (int, float, str, tuple, list, dict, set, bool)
-        self.assertIsInstance(Base.create(), Base)
-        for value in [t() for t in types] + [None, type]:
-            self.assertIsInstance(Base.create(id=value), Base)
+        Test check if file loads from rectangle
+        """
+        R1 = Rectangle(33, 34, 35, 26)
+        R2 = Rectangle(202, 2)
+        lR = [R1, R2]
+        Rectangle.save_to_file(lR)
+        lR2 = Rectangle.load_from_file()
+        self.assertNotEqual(lR, lR2)
 
-    def test_create_id_equality(self):
-        """Test the create method
+    def test_file_square(self):
         """
-        types = (int, float, str, tuple, list, dict, set, bool)
-        self.assertNotEqual(self.base.id, Base.create().id)
-        for value in (t() for t in types):
-            self.assertEqual(Base.create(id=value).id, value)
-
-    def test_create_id_identity(self):
-        """Test the create method
+        Test check if file loads from square
         """
-        self.assertIsNone(Base.create(id=None).id)
-        self.assertIs(Base.create(id=type).id, type)
-
-    def test_create_id_type(self):
-        """Test the create method
-        """
-        self.assertIsInstance(Base.create().id, int)
-
-    def test_create_raises(self):
-        """Test the create method
-        """
-        self.assertRaisesRegex(
-            TypeError,
-            ".*\\bcreate\\(\\) takes 1 positional argument\\b.*",
-            Base.create, 0
-        )
-
-    def test_to_json_string_equality(self):
-        """Test the to_json_string method
-        """
-        types = (int, float, str, tuple, list, dict, bool)
-        lists = ([{'a': 1}], [{'a': 1}, {'a': 2, 'b': 3}])
-        self.assertEqual(Base.to_json_string(None), json.dumps([]))
-        for value in (t() for t in types):
-            self.assertEqual(Base.to_json_string(value), json.dumps(value))
-            self.assertEqual(Base.to_json_string([value]), json.dumps([value]))
-        for value in lists:
-            self.assertEqual(Base.to_json_string(value), json.dumps(value))
-
-    def test_save_to_file(self):
-        """Test the save_to_file method
-        """
-        types = (int, float, str, tuple, list, dict, bool)
-        bases = [self.base] + [Base(id=t()) for t in types]
-        fname = 'Base.json'
-        try:
-            remove(fname)
-        except FileNotFoundError:
-            pass
-        self.assertIsNone(Base.save_to_file(None))
-        with open(fname) as ifile:
-            self.assertEqual(ifile.read(), '[]')
-        for index in range(len(bases)):
-            self.assertRaises(AttributeError, Base.save_to_file, bases[index:])
+        S1 = Square(22)
+        S2 = Square(44, 44, 55, 66)
+        lS = [S1, S2]
+        Square.save_to_file(lS)
+        lS2 = Square.load_from_file()
+        self.assertNotEqual(lS, lS2)
